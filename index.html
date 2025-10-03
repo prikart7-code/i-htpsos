@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOLDER - Казино</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #2a2a4a;
+        }
+
+        .close-btn {
+            color: #6c757d;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .app-title {
+            text-align: center;
+        }
+
+        .app-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .app-subtitle {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        /* Balance */
+        .balance-section {
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        .balance-label {
+            font-size: 14px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .balance-amount {
+            font-size: 28px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Wheel Page */
+        .wheel-page, .mines-page {
+            display: none;
+        }
+
+        /* Wheel Styles */
+        .wheel-section {
+            padding: 20px 0;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            background: conic-gradient(
+                from 0deg,
+                #ff6b6b 0deg 90deg,
+                #4ecdc4 90deg 180deg,
+                #45b7d1 180deg 270deg,
+                #96ceb4 270deg 360deg
+            );
+            border: 8px solid #2a2a4a;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .wheel.spinning {
+            animation: spin 3s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(1260deg); }
+        }
+
+        .wheel-sections {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .wheel-item {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            transform-origin: bottom right;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .wheel-item:nth-child(1) { transform: rotate(0deg); }
+        .wheel-item:nth-child(2) { transform: rotate(90deg); }
+        .wheel-item:nth-child(3) { transform: rotate(180deg); }
+        .wheel-item:nth-child(4) { transform: rotate(270deg); }
+
+        .multiplier {
+            transform: rotate(45deg);
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: #ff4757;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 10;
+            filter: drop-shadow(0 0 10px rgba(255, 71, 87, 0.8));
+        }
+
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: #1a1a2e;
+            border-radius: 50%;
+            border: 4px solid #ff4757;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
+        }
+
+        /* Bet Controls */
+        .bet-controls {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .bet-title {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .current-bet {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+
+        .bet-amount {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .bet-info {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .bet-multiplier {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .timer {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .quick-bets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quick-bet {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 8px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .quick-bet:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .quick-bet.active {
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            border-color: transparent;
+            transform: scale(1.05);
+        }
+
+        .multiplier-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .multiplier-item {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .multiplier-item.active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+            transform: scale(1.02);
+        }
+
+        .multiplier-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .multiplier-bet {
+            font-size: 16px;
+            color: #00ff88;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .multiplier-count {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .spin-button {
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            border: none;
+            color: white;
+            padding: 18px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .spin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 255, 136, 0.4);
+        }
+
+        .spin-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Mines Game */
+        .mines-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            padding: 0 10px;
+        }
+
+        .mine-cell {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .mine-cell:hover {
+            transform: scale(1.05);
+            border-color: #00ff88;
+        }
+
+        .mine-cell.revealed {
+            background: #10b981;
+        }
+
+        .mine-cell.mine {
+            background: #ef4444;
+        }
+
+        .mine-cell.flag::before {
+            content: "🚩";
+        }
+
+        .multiplier-steps {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .multiplier-step {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .multiplier-step:last-child {
+            border-bottom: none;
+        }
+
+        .step-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .step-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .step-active .step-value {
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .mines-controls {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .mines-title {
+            font-size: 16px;
+            color: #6c757d;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .mines-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .mine-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px 8px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .mine-btn.active {
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            border-color: transparent;
+            transform: scale(1.05);
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 12px 8px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            border-color: transparent;
+            transform: scale(1.05);
+        }
+
+        /* Game Info */
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            padding: 0 10px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <!-- Wheel Game Page -->
+    <div class="container wheel-page">
+        <div class="header">
+            <button class="close-btn" onclick="showMainPage()">×</button>
+            <div class="app-title">
+                <div class="app-name">FOLDER</div>
+                <div class="app-subtitle">МИНИ-ПРИЛОЖЕНИЕ</div>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="balance-section">
+            <div class="balance-label">Баланс</div>
+            <div class="balance-amount" id="balanceAmount">P 100.00</div>
+        </div>
+
+        <div class="wheel-section">
+            <div class="wheel-container">
+                <div class="pointer"></div>
+                <div class="wheel" id="wheel">
+                    <div class="wheel-sections">
+                        <div class="wheel-item"><div class="multiplier">x2</div></div>
+                        <div class="wheel-item"><div class="multiplier">x3</div></div>
+                        <div class="wheel-item"><div class="multiplier">x5</div></div>
+                        <div class="wheel-item"><div class="multiplier">x50</div></div>
+                    </div>
+                </div>
+                <div class="center-circle" id="centerText">FOLDER</div>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <div class="info-item">
+                <div class="info-label">Текущий множитель</div>
+                <div class="info-value" id="currentMultiplier">-</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Выигрыши</div>
+                <div class="info-value" id="winsCount">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Макс выигрыш</div>
+                <div class="info-value" id="maxWin">0</div>
+            </div>
+        </div>
+
+        <div class="bet-controls">
+            <div class="bet-title">Ваша ставка</div>
+            <div class="current-bet">
+                <div class="bet-amount" id="betAmount">P 10.00</div>
+                <div class="bet-info">
+                    <div class="timer" id="timer">10s</div>
+                    <div class="bet-multiplier">1/2 x2</div>
+                </div>
+            </div>
+
+            <div class="quick-bets">
+                <button class="quick-bet" onclick="clearBet()">Clear</button>
+                <button class="quick-bet" onclick="addToBet(100)">+100</button>
+                <button class="quick-bet" onclick="addToBet(1000)">+1K</button>
+                <button class="quick-bet" onclick="setMaxBet()">All</button>
+            </div>
+
+            <div class="multiplier-grid">
+                <div class="multiplier-item" data-multiplier="2">
+                    <div class="multiplier-value">x2</div>
+                    <div class="multiplier-bet" id="bet2">0 ₽</div>
+                    <div class="multiplier-count">0 ставок</div>
+                </div>
+                <div class="multiplier-item" data-multiplier="3">
+                    <div class="multiplier-value">x3</div>
+                    <div class="multiplier-bet" id="bet3">0 ₽</div>
+                    <div class="multiplier-count">0 ставок</div>
+                </div>
+                <div class="multiplier-item" data-multiplier="5">
+                    <div class="multiplier-value">x5</div>
+                    <div class="multiplier-bet" id="bet5">0 ₽</div>
+                    <div class="multiplier-count">0 ставок</div>
+                </div>
+                <div class="multiplier-item" data-multiplier="50">
+                    <div class="multiplier-value">x50</div>
+                    <div class="multiplier-bet" id="bet50">0 ₽</div>
+                    <div class="multiplier-count">0 ставок</div>
+                </div>
+            </div>
+
+            <button class="spin-button" id="spinBtn" onclick="startWheelSpin()">Вращение...</button>
+        </div>
+    </div>
+
+    <!-- Mines Game Page -->
+    <div class="container mines-page">
+        <div class="header">
+            <button class="close-btn" onclick="showMainPage()">×</button>
+            <div class="app-title">
+                <div class="app-name">FOLDER</div>
+                <div class="app-subtitle">МИНИ-ПРИЛОЖЕНИЕ</div>
+            </div>
+            <div style="width: 24px;"></div>
+        </div>
+
+        <div class="balance-section">
+            <div class="balance-label">Баланс</div>
+            <div class="balance-amount" id="minesBalance">P 100.00</div>
+        </div>
+
+        <div class="multiplier-steps" id="multiplierSteps">
+            <div class="multiplier-step">
+                <div class="step-value">X1.04</div>
+                <div class="step-label">шаг 1</div>
+            </div>
+            <div class="multiplier-step">
+                <div class="step-value">X1.13</div>
+                <div class="step-label">шаг 2</div>
+            </div>
+            <div class="multiplier-step">
+                <div class="step-value">X1.23</div>
+                <div class="step-label">шаг 3</div>
+            </div>
+            <div class="multiplier-step">
+                <div class="step-value">X1.35</div>
+                <div class="step-label">шаг 4</div>
+            </div>
+        </div>
+
+        <div class="mines-grid" id="minesGrid">
+            <!-- 5x5 grid will be generated by JavaScript -->
+        </div>
+
+        <div class="game-info">
+            <div class="info-item">
+                <div class="info-label">Текущий множитель</div>
+                <div class="info-value" id="minesMultiplier">1.00x</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Открыто ячеек</div>
+                <div class="info-value" id="openedCells">0</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Макс выигрыш</div>
+                <div class="info-value" id="minesMaxWin">0</div>
+            </div>
+        </div>
+
+        <div class="bet-controls">
+            <div class="current-bet">
+                <div class="bet-amount" id="minesBetAmount">P 10.00</div>
+                <div class="bet-info">
+                    <div class="bet-multiplier">1/2 x2</div>
+                </div>
+            </div>
+
+            <div class="mines-controls">
+                <div class="mines-title">Количество мин</div>
+                <div class="mines-buttons">
+                    <button class="mine-btn active" onclick="setMinesCount(1)">1</button>
+                    <button class="mine-btn" onclick="setMinesCount(2)">2</button>
+                    <button class="mine-btn" onclick="setMinesCount(3)">3</button>
+                    <button class="mine-btn" onclick="setMinesCount(4)">4</button>
+                </div>
+            </div>
+
+            <button class="spin-button" id="minesSpinBtn" onclick="startMinesGame()">Сделать ставку</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const gameState = {
+            balance: 100.00,
+            currentBet: 10.00,
+            isSpinning: false,
+            timer: 10,
+            winsCount: 0,
+            maxWin: 0,
+            minesCount: 1,
+            minesGameActive: false,
+            openedCells: 0,
+            currentMultiplier: 1.00
+        };
+
+        // Wheel multipliers with probabilities
+        const wheelMultipliers = [
+            { value: 2, probability: 40, angle: 0 },
+            { value: 3, probability: 30, angle: 90 },
+            { value: 5, probability: 20, angle: 180 },
+            { value: 50, probability: 10, angle: 270 }
+        ];
+
+        // Mines multipliers
+        const minesMultipliers = {
+            1: [1.04, 1.13, 1.23, 1.35, 1.50, 1.70, 2.00, 2.50, 3.20, 4.50],
+            2: [1.08, 1.20, 1.35, 1.55, 1.85, 2.30, 3.00, 4.20, 6.50, 12.00],
+            3: [1.12, 1.28, 1.50, 1.80, 2.25, 3.00, 4.50, 7.50, 15.00, 40.00],
+            4: [1.16, 1.37, 1.68, 2.10, 2.75, 3.90, 6.50, 13.00, 35.00, 150.00]
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showWheelPage();
+            startTimer();
+            initializeMinesGrid();
+            updateUI();
+        });
+
+        // Navigation
+        function showWheelPage() {
+            document.querySelector('.wheel-page').style.display = 'block';
+            document.querySelector('.mines-page').style.display = 'none';
+        }
+
+        function showMinesPage() {
+            document.querySelector('.wheel-page').style.display = 'none';
+            document.querySelector('.mines-page').style.display = 'block';
+            updateMinesUI();
+        }
+
+        function showMainPage() {
+            // For demo, show wheel page as main
+            showWheelPage();
+        }
+
+        // Wheel Game Functions
+        function startWheelSpin() {
+            if (gameState.isSpinning || gameState.currentBet > gameState.balance) return;
+
+            gameState.isSpinning = true;
+            gameState.balance -= gameState.currentBet;
+            updateUI();
+
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = true;
+            spinBtn.textContent = 'Вращение...';
+
+            const wheel = document.getElementById('wheel');
+            const centerText = document.getElementById('centerText');
+
+            // Select random multiplier based on probability
+            const random = Math.random() * 100;
+            let cumulativeProb = 0;
+            let selectedMultiplier;
+
+            for (const multiplier of wheelMultipliers) {
+                cumulativeProb += multiplier.probability;
+                if (random <= cumulativeProb) {
+                    selectedMultiplier = multiplier;
+                    break;
+                }
+            }
+
+            // Calculate target angle (3.5 rotations + multiplier angle)
+            const targetAngle = 1260 + selectedMultiplier.angle + Math.random() * 45;
+            
+            wheel.style.transform = `rotate(${targetAngle}deg)`;
+            centerText.textContent = '...';
+
+            setTimeout(() => {
+                const winAmount = gameState.currentBet * selectedMultiplier.value;
+                gameState.balance += winAmount;
+                gameState.winsCount++;
+                
+                if (winAmount > gameState.maxWin) {
+                    gameState.maxWin = winAmount;
+                }
+
+                gameState.isSpinning = false;
+                spinBtn.disabled = false;
+                spinBtn.textContent = 'Крутить снова';
+                centerText.textContent = `${selectedMultiplier.value}x`;
+
+                document.getElementById('currentMultiplier').textContent = `${selectedMultiplier.value}x`;
+                
+                updateUI();
+                
+                // Show win message
+                if (selectedMultiplier.value === 50) {
+                    alert(`🎉 ДЖЕКПОТ! Вы выиграли ${winAmount.toFixed(2)}!`);
+                } else {
+                    alert(`🎉 Вы выиграли ${winAmount.toFixed(2)}!`);
+                }
+
+            }, 4000);
+        }
+
+        // Bet Management
+        function clearBet() {
+            gameState.currentBet = 0;
+            updateUI();
+        }
+
+        function addToBet(amount) {
+            gameState.currentBet += amount;
+            if (gameState.currentBet > gameState.balance) {
+                gameState.currentBet = gameState.balance;
+            }
+            updateUI();
+        }
+
+        function setMaxBet() {
+            gameState.currentBet = gameState.balance;
+            updateUI();
+        }
+
+        // Timer
+        function startTimer() {
+            setInterval(() => {
+                gameState.timer--;
+                if (gameState.timer <= 0) {
+                    gameState.timer = 10;
+                }
+                document.getElementById('timer').textContent = `${gameState.timer}s`;
+            }, 1000);
+        }
+
+        // Mines Game Functions
+        function initializeMinesGrid() {
+            const grid = document.getElementById('minesGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'mine-cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => revealMineCell(i));
+                cell.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    toggleFlag(i);
+                });
+                grid.appendChild(cell);
+            }
+        }
+
+        function setMinesCount(count) {
+            gameState.minesCount = count;
+            document.querySelectorAll('.mine-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updateMinesMultipliers();
+        }
+
+        function updateMinesMultipliers() {
+            const steps = document.getElementById('multiplierSteps');
+            const multipliers = minesMultipliers[gameState.minesCount];
+            
+            steps.innerHTML = '';
+            multipliers.forEach((multiplier, index) => {
+                const step = document.createElement('div');
+                step.className = 'multiplier-step';
+                step.innerHTML = `
+                    <div class="step-value">X${multiplier.toFixed(2)}</div>
+                    <div class="step-label">шаг ${index + 1}</div>
+                `;
+                steps.appendChild(step);
+            });
+        }
+
+        function startMinesGame() {
+            if (gameState.minesGameActive || gameState.currentBet > gameState.balance) return;
+
+            gameState.minesGameActive = true;
+            gameState.balance -= gameState.currentBet;
+            gameState.openedCells = 0;
+            gameState.currentMultiplier = 1.00;
+
+            initializeMinesGrid();
+            updateUI();
+            updateMinesUI();
+
+            document.getElementById('minesSpinBtn').textContent = 'Игра идет...';
+            document.getElementById('minesSpinBtn').disabled = true;
+        }
+
+        function revealMineCell(index) {
+            if (!gameState.minesGameActive) return;
+
+            const cell = document.querySelector(`.mine-cell[data-index="${index}"]`);
+            if (cell.classList.contains('revealed') || cell.classList.contains('flag')) return;
+
+            // Simple logic: first few cells are safe, then random mines
+            const isMine = gameState.openedCells >= (5 - gameState.minesCount) && 
+                          Math.random() < 0.3;
+
+            if (isMine) {
+                cell.classList.add('mine');
+                cell.textContent = '💣';
+                endMinesGame(false);
+            } else {
+                cell.classList.add('revealed');
+                gameState.openedCells++;
+                gameState.currentMultiplier = minesMultipliers[gameState.minesCount][gameState.openedCells - 1] || 1.00;
+                
+                updateMinesUI();
+
+                // Check for win
+                if (gameState.openedCells === (25 - gameState.minesCount)) {
+                    endMinesGame(true);
+                }
+            }
+        }
+
+        function toggleFlag(index) {
+            if (!gameState.minesGameActive) return;
+            
+            const cell = document.querySelector(`.mine-cell[data-index="${index}"]`);
+            if (!cell.classList.contains('revealed')) {
+                cell.classList.toggle('flag');
+            }
+        }
+
+        function endMinesGame(isWin) {
+            gameState.minesGameActive = false;
+            
+            if (isWin) {
+                const winAmount = gameState.currentBet * gameState.currentMultiplier;
+                gameState.balance += winAmount;
+                alert(`🎉 Победа! Вы выиграли ${winAmount.toFixed(2)}!`);
+            } else {
+                alert('💥 Вы наткнулись на мину!');
+            }
+
+            document.getElementById('minesSpinBtn').textContent = 'Сделать ставку';
+            document.getElementById('minesSpinBtn').disabled = false;
+            updateUI();
+        }
+
+        // UI Updates
+        function updateUI() {
+            document.getElementById('balanceAmount').textContent = `P ${gameState.balance.toFixed(2)}`;
+            document.getElementById('minesBalance').textContent = `P ${gameState.balance.toFixed(2)}`;
+            document.getElementById('betAmount').textContent = `P ${gameState.currentBet.toFixed(2)}`;
+            document.getElementById('minesBetAmount').textContent = `P ${gameState.currentBet.toFixed(2)}`;
+            document.getElementById('winsCount').textContent = gameState.winsCount;
+            document.getElementById('maxWin').textContent = gameState.maxWin.toFixed(2);
+        }
+
+        function updateMinesUI() {
+            document.getElementById('minesMultiplier').textContent = `${gameState.currentMultiplier.toFixed(2)}x`;
+            document.getElementById('openedCells').textContent = gameState.openedCells;
+            document.getElementById('minesMaxWin').textContent = (gameState.currentBet * Math.max(...minesMultipliers[gameState.minesCount])).toFixed(2);
+        }
+
+        // Initialize mines multipliers
+        updateMinesMultipliers();
+
+        // Telegram Web App Integration
+        if (window.Telegram && Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+        }
+    </script>
+</body>
+</html>
